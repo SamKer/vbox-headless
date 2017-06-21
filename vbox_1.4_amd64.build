@@ -1,0 +1,56 @@
+ dpkg-buildpackage -rfakeroot -D -us -uc
+dpkg-buildpackage: paquet source vbox
+dpkg-buildpackage: version source 1.4
+dpkg-buildpackage: distribution source xenial
+dpkg-buildpackage: source changé par Samir Keriou <samir.keriou@gmail.com>
+ dpkg-source --before-build vbox-1.4
+dpkg-buildpackage: architecture hôte amd64
+ fakeroot debian/rules clean
+dh clean --with=systemd
+   dh_testdir
+   dh_auto_clean
+   dh_clean
+ dpkg-source -b vbox-1.4
+dpkg-source: avertissement: aucun format source indiqué dans debian/source/format, voir dpkg-source(1)
+dpkg-source: info: utilisation du format source « 1.0 »
+dpkg-source: info: construction de vbox dans vbox_1.4.tar.gz
+dpkg-source: info: construction de vbox dans vbox_1.4.dsc
+ debian/rules build
+dh build --with=systemd
+   dh_testdir
+   dh_update_autotools_config
+   dh_auto_configure
+   dh_auto_build
+   dh_auto_test
+ fakeroot debian/rules binary
+dh binary --with=systemd
+   dh_testroot
+   dh_prep
+   dh_auto_install
+   dh_install
+   dh_installdocs
+   dh_installchangelogs
+   dh_installman
+   dh_installcron
+   dh_systemd_enable
+   dh_installinit
+   dh_systemd_start
+   dh_perl
+   dh_link
+   dh_strip_nondeterminism
+   dh_compress
+   dh_fixperms
+   dh_strip
+   dh_makeshlibs
+   dh_shlibdeps
+   dh_installdeb
+   dh_gencontrol
+   dh_md5sums
+   dh_builddeb
+dpkg-deb : construction du paquet « vbox » dans « ../vbox_1.4_amd64.deb ».
+ dpkg-genchanges  >../vbox_1.4_amd64.changes
+dpkg-genchanges: inclusion du code source original dans l'envoi (« upload »)
+ dpkg-source --after-build vbox-1.4
+dpkg-buildpackage: envoi complet ; paquet Debian natif (inclusion du code source complet)
+Now running lintian...
+Finished running lintian.

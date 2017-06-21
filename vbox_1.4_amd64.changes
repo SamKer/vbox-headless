@@ -1,0 +1,28 @@
+Format: 1.8
+Date: Thu, 10 Nov 2016 15:32:01 +0100
+Source: vbox
+Binary: vbox
+Architecture: source amd64
+Version: 1.4
+Distribution: xenial
+Urgency: medium
+Maintainer: Samir Keriou <samir.keriou@gmail.com>
+Changed-By: Samir Keriou <samir.keriou@gmail.com>
+Description:
+ vbox       - Manage vm on virtualbox in headless mode
+Changes:
+ vbox (1.4) xenial; urgency=medium
+ .
+   * Initial Release.
+Checksums-Sha1:
+ 91f6dd6694201d9b8830805b126217f191eb6618 565 vbox_1.4.dsc
+ 87d14926dd899b1ef03bf2844994e8dc0b91f92b 9775 vbox_1.4.tar.gz
+ e2f631f11077510feef71987a0e2540fe57d3ea5 10060 vbox_1.4_amd64.deb
+Checksums-Sha256:
+ 99c07c5b9f8d6db176e74eba1b93493fe21744ad474b210286353261e37f5fc4 565 vbox_1.4.dsc
+ d237bf29fd5fdbbbe51345e71e54c209e91097b75b4ed55397b7b5532ee0e555 9775 vbox_1.4.tar.gz
+ 1d97670afffba6df899d7ab4fa17bb7d87d62ae9fdab43195c42d62b7606fb0b 10060 vbox_1.4_amd64.deb
+Files:
+ 4f8a184c10f9801a8c2418a38c470b36 565 admin optional vbox_1.4.dsc
+ 6bd727d63f3249dea9337dfb93e3eb75 9775 admin optional vbox_1.4.tar.gz
+ f0a56600348be130090078a3b3e76dc0 10060 admin optional vbox_1.4_amd64.deb
