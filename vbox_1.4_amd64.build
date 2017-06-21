@@ -33,7 +33,11 @@ dh binary --with=systemd
    dh_installman
    dh_installcron
    dh_systemd_enable
-   dh_installinit
+   debian/rules override_dh_installinit
+make[1] : on entre dans le répertoire « /home/sam/Programmes/vbox/vbox-1.4 »
+dh_installinit --name=vbox
+dh_systemd_enable vbox.service
+make[1] : on quitte le répertoire « /home/sam/Programmes/vbox/vbox-1.4 »
    dh_systemd_start
    dh_perl
    dh_link

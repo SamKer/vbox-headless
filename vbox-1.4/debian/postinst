@@ -17,7 +17,6 @@ set -e
 # for details, see https://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 systemctl  daemon-reload
-dh_systemd_enable vbox.service
 
 if [ ! -f /var/log/vbox.log ]
 then

@@ -15,14 +15,14 @@ Changes:
  .
    * Initial Release.
 Checksums-Sha1:
- 91f6dd6694201d9b8830805b126217f191eb6618 565 vbox_1.4.dsc
- 87d14926dd899b1ef03bf2844994e8dc0b91f92b 9775 vbox_1.4.tar.gz
- e2f631f11077510feef71987a0e2540fe57d3ea5 10060 vbox_1.4_amd64.deb
+ bf71274ad7b8315fd55a1e3c63fc285d385f0cff 565 vbox_1.4.dsc
+ b9fabbb8df310bafb1573954f3f6f6121e643fb3 9913 vbox_1.4.tar.gz
+ 9e1e9855153c23158d245e75feda81f23694337b 10112 vbox_1.4_amd64.deb
 Checksums-Sha256:
- 99c07c5b9f8d6db176e74eba1b93493fe21744ad474b210286353261e37f5fc4 565 vbox_1.4.dsc
- d237bf29fd5fdbbbe51345e71e54c209e91097b75b4ed55397b7b5532ee0e555 9775 vbox_1.4.tar.gz
- 1d97670afffba6df899d7ab4fa17bb7d87d62ae9fdab43195c42d62b7606fb0b 10060 vbox_1.4_amd64.deb
+ 2c6264be467c3c310177b350d356b1e1d25be3c4303f449f3cd67e58a61561c2 565 vbox_1.4.dsc
+ 89c46435485fed23fc4ba9ede7544e8a17bab01a592bebe8f62f19f4d4a22ef8 9913 vbox_1.4.tar.gz
+ fd565f182df4f208c7f0f3004f6edf9f1f80b8ff0c93f0026238cf82996cac37 10112 vbox_1.4_amd64.deb
 Files:
- 4f8a184c10f9801a8c2418a38c470b36 565 admin optional vbox_1.4.dsc
- 6bd727d63f3249dea9337dfb93e3eb75 9775 admin optional vbox_1.4.tar.gz
- f0a56600348be130090078a3b3e76dc0 10060 admin optional vbox_1.4_amd64.deb
+ 5658d7e37b47c0470edaf4ad3acb805c 565 admin optional vbox_1.4.dsc
+ c67ff67c7f6935bd3184bbccf2b8d163 9913 admin optional vbox_1.4.tar.gz
+ 8332dbe65519546e1e6d8b94dbed1dc8 10112 admin optional vbox_1.4_amd64.deb

@@ -230,7 +230,9 @@ _help() {
 defineHelp "reinstall" "re install vbox"
 _reinstall() {
 		_uninstall
+		sleep 1
 		_build
+		sleep 1
 		_install
 }
 

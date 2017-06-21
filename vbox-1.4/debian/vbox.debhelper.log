@@ -10,6 +10,8 @@ dh_installchangelogs
 dh_installman
 dh_installcron
 dh_systemd_enable
+override_dh_installinit dh_installinit
+override_dh_installinit dh_systemd_enable
 dh_installinit
 dh_systemd_start
 dh_perl
