@@ -1,0 +1,689 @@
+#! /bin/bash
+# VBOX CONTROL VM HEADLESS
+# @author samir.keriou
+
+dircurrent=`dirname $0`
+
+#get config vbox
+vm_config() {
+	VMCONF=/etc/vbox.ini
+	if [ -f $VMCONF ]
+	then
+		. $VMCONF
+	else
+		#perhaps in debian package
+		VMCONF=`realpath $dircurrent/../../etc/vbox.ini`
+		if [ -f $VMCONF ]
+		then
+			. $VMCONF
+		else
+			echo "$VMCONF not exists"
+			exit 0
+		fi
+	fi
+	vm_refresh
+	vm_sshconfig
+}
+
+#refresh list for available or deleted vm
+#private method, called by vm_config
+vm_refresh() {
+	local vma=`ls $VMAVAILABLES`
+	local vmv=`vm_getlist`
+	declare -A list=()
+	local i=0
+	local VM1
+	for VM1 in $vmv; do
+		i=$(( i+1 ))
+		list[$i]="$VM1"
+		local ip=`vm_getip $VM1`
+		vm_add $VM1 "$ip"
+	done
+	#echo ${list[*]}
+	local ll="${list[*]}"
+	local VM2
+	for VM2 in $vma; do
+		vm_inArray $VM2 "$ll"
+		#echo "test $isinarray"
+		if [ "$isinarray" == "0" ]
+			then
+				sudo rm "$VMAVAILABLES/$VM2"
+		fi
+	done 	
+}
+
+#usage script
+vm_usage() {
+	echo "no params given, please refer to manpage or -help option"
+	echo ""
+	vm_help
+}
+
+#print help
+vm_help() {
+	echo "VBOX contains tools to manage and control vm in virtualbox"
+	echo "enabling vms at startup, exec script in specific vm..."
+	echo ""
+	echo "Usage: vbox [OPTION| [VM]"
+	echo ""
+	echo "Options:"
+	echo "	-v, --version	print version script"
+	echo "	-h, --help	print this help"
+	echo "	-l, --list get list available vm"
+	echo "	--description	give short description for vbox"
+	echo "	--running, isrunning	is vm running"
+	echo "	--available, isavailable is vm available"
+	echo "	--enabled, isenabled	is vm enabled at startup"
+	echo "	--on, start, poweron	start all or a specific vm"
+	echo "	--off, stop, halt, poweroff	stop all running vms or stop a specific vm"	
+	echo "	--enable, envm	enabling vm at startup"
+	echo "	--disable, disvm disabling vm at startup"
+	echo "	status	list all vm's current status"
+	echo "	setowner	define new vm owner"
+	echo "	config	get|set params, set or get config param"
+	echo "	log	log message"
+	echo "	clone	clone vm"
+	echo ""
+	echo "Examples:"
+	echo ""
+	echo "Report bug to $MAILAUTHOR"
+	exit 0	
+}
+
+#give a short description for vbox
+vm_description() {
+	echo "vbox contains tools to manage and control vm in virtualbox"
+	exit 0
+}
+
+#show version
+vm_version() {
+	echo "GNU vbox $VMVERSION"
+	echo ""
+	echo "Copyright"
+	echo ""
+	echo "written by $AUTHOR"
+	exit 0
+}
+
+
+#status des vms
+vm_status () {
+    echo "-------------------VMS STATUS---------------:"
+    for VM in `sudo -H -u $VMUSER vboxmanage list vms | grep -o '"\(.*\)"'  | cut -d'"' -f2`; do
+    	local isr=`vm_isrunning $VM`
+    	local show="1"
+    	if [[ $1 == "--running" ]] && [[ $isr == "0" ]]
+    		then
+    			show="0"
+    	fi
+    	if [ $show == "1" ]
+    		then
+    			echo -e "\t---"
+    			echo "###VM $VM :"
+    			if [ $isr == "1" ]
+    			then
+    				echo -e "State:\t \e[42m\e[1mON\e[0m"
+    			else
+    				echo -e "State:\t \e[41m\e[1mOFF\e[0m"
+    			fi
+		        #local state=`sudo -H -u $VMUSER vboxmanage showvminfo $VM | grep "^State:"`
+		        #local on=`echo "$state" | sed 's/runnin/\e[42m\e[1mON\e[0m/'`
+		        #echo -e "$on"
+		        GETIP=`vm_getip $VM`
+		        echo "IP:$GETIP"
+		        echo -e "\t---"
+    	fi
+        
+    done
+}
+
+#define owner vms, 
+vm_setowner() {
+	if [ ! $1 ]
+	then
+		echo "new owner param is missing"
+		vm_log "setowner failed, no name is specified" "ERROR"
+		exit 0
+	fi
+	vm_setconfig "VMUSER" $1
+	exit 0
+}
+
+#set config value
+vm_setconfig() {
+	case $1 in 
+		VMUSER|VMADMIN|VMADMINPASSWORD)
+			sudo sed -i -e "s/\($1=\)\(.*\)/\1$2/"  $VMCONF
+			echo "config $1 modified"
+			vm_log "config $1 modifed"
+		;;
+		*)
+			echo "set config $1 is not editable or not expected"
+			vm_log "setting config $1 failed, not editable or not expected" "ERROR"
+		;;
+	esac
+	
+}
+
+#get config value
+vm_getconfig() {
+		eval "param=\${$1}"
+		if [ ! $param ]
+		then
+			echo "no config define for $1"
+			vm_log "getting specific confif failed, no config define for $1" "ERROR"
+			exit 0
+		else
+			echo $param
+		fi
+}
+
+#get ip from vm
+vm_getip () {
+    GETIP=`sudo -H -b -u $VMUSER vboxmanage guestproperty get $1 "/VirtualBox/GuestInfo/Net/0/V4/IP" | sed -e "s/Value: //g"`
+    if [ "$GETIP" == "No value set!" ]
+       then
+          if [ -f "$VMAVAILABLES/$1" ]
+            then
+                GETIP=`cat $VMAVAILABLES/$1`
+            else
+                GETIP="need install guest addition"
+          fi
+    fi
+    echo $GETIP
+    exit
+}
+
+#is vm running
+vm_isrunning() {
+	VMSTATUS=`sudo -H -u $VMUSER vboxmanage list runningvms | grep \"$1\" | wc -l`
+        if [ $VMSTATUS == "1" ]
+            then
+            	echo 1
+    		else
+        		echo 0
+        fi
+}
+
+#isvm available
+vm_isavailable() {
+		if [ -f "$VMAVAILABLES/$1" ]
+		then
+			echo 1
+		else
+			echo 0
+	fi
+}
+
+#is vm enable at startup
+vm_isenabled() {
+	if [ -L "$VMENABLES/$1" ]
+		then
+			echo 1
+		else
+			echo 0
+	fi	
+}
+
+#list vm
+vm_getlist() {
+	local LIST=`sudo -H -u $VMUSER vboxmanage list vms | grep -o '"\(.*\)"'  | cut -d'"' -f2`
+	echo "$LIST"
+}
+
+
+
+#add available vm, 
+#private methode, please prefer refresh
+vm_add () {
+    if [ "$1" ]
+        then
+            if [ -f "$VMAVAILABLES/$1" ]
+                then
+                	local oldip=`cat $VMAVAILABLES/$1`
+                	if [ "$oldip" != "$2" ]
+                	then
+                		sudo sh -c "echo $2 > $VMAVAILABLES/$1"
+            			echo "vm $1 modified, IP=$2"
+            		fi
+                else
+            		sudo touch $VMAVAILABLES/$1
+            		sudo sh -c "echo $2 > $VMAVAILABLES/$1"
+            		echo "vm $1 added, IP=$2"
+        	fi
+        else
+            echo "no VM specified"
+    fi
+}
+
+#démarre une ou les vm activées
+vm_start () {
+	case $1 in 
+		--enable)
+			for VM in `sudo ls $VMENABLES`; do
+	            vm_startavm $VM
+	            sleep 1
+	        done
+		;;
+		--all)
+			for VM in `sudo ls $VMAVAILABLES`; do
+	            vm_startavm $VM
+	            sleep 1
+	        done
+		;;
+		*)
+			if [ "$1" ]
+	        then
+	        	vm_startavm $1 $2
+	        fi
+		;;
+	esac
+}
+
+#demarre une seule vm après vérif
+vm_startavm () {
+    VMSTATUS=`vm_isrunning $1`
+    if [ $VMSTATUS = "1" ]
+        then
+            MSG="$1 ALREADY RUNNING"
+            echo $MSG
+            vm_log "failed to start $1, VM already started" "WARNING"
+    	else
+        	echo "###________________________________starting VM $1 :"
+            sudo -H -u $VMUSER vboxmanage startvm $1 --type headless || {
+            echo "failed to start $1"
+            vm_log "$1 failed to start" "ERROR"
+            }
+        	vm_log "$1 started"
+    fi
+}
+
+#stop all or one vm
+vm_stop () {
+     if [ "$1" ]
+         then
+            vm_stopavm $1
+         else
+            for VM in `sudo -H -u $VMUSER vboxmanage list runningvms | grep -o '"\(.*\)"'  | cut -d'"' -f2`; do
+            	vm_stopavm $VM
+            done
+     fi
+}
+
+#stop one vm
+vm_stopavm () {
+       VMSTATUS=`vm_isrunning $1`
+        if [ $VMSTATUS = "1" ]
+            then
+            	echo "###_________________________________stoping VM $1:"
+                sudo -H -u $VMUSER vboxmanage controlvm $1 poweroff
+                echo "....VM $1 is off."
+                vm_log "$1 is off"
+        else
+                vm_log "vm $1 is already off" "WARNING"
+        fi
+}
+
+#clone vm
+vm_clone () {
+	#refreshing vbox
+	echo "---refresh config"
+	vm_refresh
+	VM=$1
+	NEWVM=$2
+	local isr=`vm_isrunning $VM`
+	if [ "$isr" == "1" ]
+	then
+		echo "$VM is running, run first vbox stop $VM"
+		vm_log "can't clone running vm $VM" "WARNING"
+		exit 0
+	fi
+	local isa=`vm_isavailable $NEWVM`
+	if [ $isa == "1" ]
+	then 
+		echo "$NEWVM already exist, choose a different name"
+		vm_log "clone failed, vm $NEWVM already exist" "WARNING"
+		exit 0
+	fi
+	echo "...cloning"
+	sudo -H -u $VMUSER vboxmanage clonevm $VM --name $NEWVM --register || vm_log "clone $VM failed" "ERROR"
+	vm_log "clone $VM succeed"	
+	echo "starting vm $NEWVM"
+	vm_startavm $NEWVM
+	echo "waiting loading vm services----------------"
+	sleep 60
+	echo "execute cloned script"
+	vm_exec $NEWVM $VMSCRIPT_NEWHOSTNAME $NEWVM
+	#adding ssh config
+	#vm_adduser $USER $NEWVM
+	ip=`vm_getip $NEWVM` 
+	echo "$NEWVM created. IP:$ip"
+	echo "refreshing conf"
+	vm_log "new vm created: $NEWVM with IP=$ip"
+	
+}
+
+#config ssh
+vm_sshconfig() {
+	if [ $USER == "root" ] || [ $USER == $VMADMIN ]
+	then
+		echo "no need to set ssh config for root or $VMADMIN"
+		vm_log "no sshconfig to do for root or $VMADMIN" "WARNING"
+		exit 0
+	fi
+	if [ ! -f "/usr/bin/ssh" ]
+		then
+			sudo apt-get install -y openssh
+	fi
+	if [ ! -d "$HOME/.ssh" ]
+		then
+			sudo apt-get install -y openssh
+	fi
+	if [ ! -f "$HOME/.ssh/id_rsa" ]
+		then
+			cd ~ & ssh-keygen -t rsa
+				
+	fi
+	if [ ! -f "$HOME/.ssh/config" ]
+		then	
+			touch "$HOME/.ssh/config"
+	fi
+}
+
+#add config ssh & put id_rsa to vm
+vm_adduser() { 
+	local NEWUSER=$1
+	local VM=$2
+	local isr=`vm_isrunning $VM`
+	if [ $isr == "0" ]
+	then
+		echo "$VM must be running, try first  vbox start $VM"
+		vm_log "sshconfig need $VM to be running" "ERROR"
+		exit 0
+	fi 
+	local ip=`vm_getip $VM`
+	local isc=`cat $HOME/.ssh/config | grep "Host $VM" | wc -l`
+	if [ $isc == "0" ]
+		then
+			echo -e "Host $VM" >> $HOME/.ssh/config
+			echo -e "\tHostname $ip" >> $HOME/.ssh/config
+			echo -e "\tUser $USER" >> $HOME/.ssh/config
+	fi
+	local key=`cat $HOME/.ssh/id_rsa.pub`
+	vm_exec $VM $VMSCRIPT_NEWUSER $NEWUSER "$key" 
+}
+
+#copy file local to vm
+vm_scp() {
+	echo "not"
+	exit 0
+	if [ ! $1 ] 
+	then
+		echo "spécify vm"
+		exit 0
+	fi
+	if [ ! $2 ] 
+	then
+		echo "spécify local file"
+		exit 0
+	fi
+	if [ ! $3 ] 
+	then
+		echo "spécify target in vm"
+		exit 0
+	fi
+	#copy to tmp file cause privilge
+	sudo cp $2 /tmp/vboxtmpfile
+	sudo chmod 777 	/tmp/vboxtmpfile
+	sudo -H -u $VMUSER vboxmanage guestcontrol $1 --username "$VMADMIN" --password "$VMADMINPASSWORD" copyto "$2" --target-directory "$3"
+	sudo rm /tmp/vboxtmpfile
+}
+
+#log message
+# vbox log message type
+vm_log () {
+		local d=`date +"date: %Y/%m/%d time: %H:%M:%S"`
+		local type="INFO"
+		if [ "$2" ]
+			then 
+				type="$2"
+		fi
+		local msg="[$d][$type]---$1"
+		sudo sh -c "echo '$msg' >> $VMLOG"
+}
+
+#copy  and execute script in vm
+vm_exec () {
+	local isl=`vboxmanage showvminfo debian-jessie | grep Linux | wc -l`
+	local isr=`vm_isrunning $1`
+	if [ $isr == "1" ]
+		then
+			local filename=`basename $2`
+			if [ "$3" ]
+			then
+				arg1=$3
+			else
+				arg1=""
+			fi
+			if [ "$4" ]
+			then
+				arg2=$4
+			else
+				arg2=""
+			fi
+			#put script in vm
+			sudo -H -u $VMUSER vboxmanage guestcontrol $1 --username "$VMADMIN" --password "$VMADMINPASSWORD" copyto "$2" --target-directory "/tmp/"
+			#chmod +x file
+			sudo -H -u $VMUSER vboxmanage guestcontrol $1 --username "$VMADMIN" --password "$VMADMINPASSWORD" run --exe /bin/chmod --wait-stdout --wait-stderr --verbose -- chmod/arg0 755 /tmp/$filename
+			#exec script
+			sudo -H -u $VMUSER vboxmanage guestcontrol $1 --username "$VMADMIN" --password "$VMADMINPASSWORD" run --exe /bin/bash --wait-stdout --wait-stderr --verbose -- bash/arg0 /tmp/$filename "$arg1" "$arg2"
+		else
+			echo "$1 is not running, try first vbox start $1"
+			vm_log "exec failed, vm $1 is not running" "ERROR"
+	fi
+}
+
+#enable a vm at startup
+vm_enable () {
+    if [ ! $1 ]
+    then
+    	echo "specify vm name"
+    	exit 0
+    fi
+    local isa=`vm_isavailable $1`
+    if [ $isa == "1" ]
+    then
+    	sudo ln -s $VMAVAILABLES/$1 $VMENABLES/$1
+        echo "vm $1 enabled"
+        vm_log "enabling vm $1 at startup"
+    else
+    	echo "vm $1 not exist"
+    	vm_log "enabling vm failed, vm $1 is not exist" "ERROR"
+    fi
+}
+
+#disable vm at startup
+vm_disable () {
+	if [ ! $1 ]
+    then
+    	echo "specify vm name"
+    	exit 0
+    fi
+    local ise=`vm_isenabled $1`
+    if [ $ise == "1" ]
+    then
+    	sudo rm $VMENABLES/$1
+        echo "vm $1 disabled"
+        vm_log "disabling vm $1 at startup"
+    else
+    	echo "vm $1 already disabled"
+    	vm_log "disabling vm already did" "WARNING"
+    fi    
+}
+
+#is item in array
+#return is in $isinarray
+vm_inArray () {
+	local item
+	local motif="$1"
+	local list="$2"
+	isinarray="0"
+	for item in $list; do
+		#echo "$item compare to $motif"
+		if [ "$item" == "$motif" ]
+		then 
+			isinarray="1";
+		fi
+	done
+}
+
+#add guest additon
+vm_addguestaddition() {
+		if [ ! $1 ]
+	    then
+	    	echo "specify vm name"
+	    	exit 0
+	    fi	
+	    local VM=$1
+	    echo "exec a command in vm need at first guestaddition"
+	    echo " connect to vm $VM and execute following commands:"
+	    echo "sudo apt-get install gcc make build-essential linux-headers-$(uname -r)"
+	    echo "click on menu peripheriques/mount iso addition"
+		echo "sudo mount /media/cdrom"
+		echo "sudo mkdir /tmp/virtualbox"
+		echo "sudo cp -r /media/cdrom/* /tmp/virtualbox/"
+		echo "sudo /tmp/virtualbox/VBoxLinuxAdditions.run"
+		echo "sudo reboot"
+			
+		exit 0
+		
+		
+			#test vrde connexion for later
+		local isr=`vm_isrunning $VM`
+		if [ $isr == "1" ]
+		then 
+			echo "vm $VM need reboot with --vrde option to 'on'"
+			echo "run first vbox stop $VM"
+			echo " and retry"
+			exit 0
+		fi
+		sudo -H -u $VMUSER vboxmanage modifyvm "$1" --vrde on
+    	sudo -H -u $VMUSER vboxmanage modifyvm "$1" --vrdeport 5000
+		vm_start $VM
+		echo "waiting service on..."
+		sleep 60
+		local ip=`vm_getip $VM`
+		rdesktop -u $VMADMIN -p $VMADMINPASSWORD $ip:5000 -s 
+		
+}
+
+#EXPORT VM IN OVA format
+vm_export() {
+	if [ ! $1 ] 
+	then
+		echo -e "specify  vm to export"
+		exit 0 
+	fi
+	vboxmanage export $1 -o "$VMEXPORTS/$1.ova"	
+}
+
+#import vm
+vm_import() {
+	if [ ! $1 ] 
+	then
+		echo -e "specify path to vm.ova to import"
+		exit 0 
+	fi
+	vboxmanage import $1	
+}
+
+#todo list
+vm_todo() {
+		echo "TODO"
+		echo -e "\taddguestaddition"
+		echo -e "\tdelete vm"
+		echo -e "\timport iso"
+		echo -e "\timport ova"	
+		echo -e "\texport vm"				
+}
+
+#load config if exist, break else
+vm_config
+case "$1" in
+		-h|--help)
+			vm_help
+		;;
+		-v|--version)
+			vm_version
+		;;
+		--description)
+			vm_description
+		;;
+		status)
+			vm_status $2
+		;;
+		setowner)
+			vm_setowner $2
+		;;
+		config)
+			if [ "$2" == "get" ]
+			then
+				vm_getconfig $3
+			else 
+				vm_setconfig $3 $4
+			fi
+		;;
+		--running|isrunning)
+			vm_isrunning $2
+		;;
+		-l|--list)
+			vm_getlist	
+		;;
+		#refresh)
+			#	vm_refresh
+		#;;
+		--enabled|isenabled)
+			vm_isenabled $2
+		;;
+		--available|isavailable)
+			vm_isavailable $2
+		;;
+		start|--on|poweron)
+			vm_start $2
+		;;
+		stop|halt|poweroff|--off)
+			vm_stop $2
+		;;
+		log|--log)
+			vm_log $2 $3
+		;;
+		clone)
+			vm_clone $2 $3
+		;;
+		exec)
+			vm_exec $2 $3 $4
+		;;
+		envm|--enable)
+			vm_enable $2
+		;;
+		disvm|--disable)
+			vm_disable $2
+		;;
+		adduser)
+			vm_adduser $2 $3
+		;;
+		scp)
+			vm_scp $2 $3 $4
+		;;
+		guestaddition)
+			vm_addguestaddition $2
+		;;
+		todo)
+			vm_todo
+		;;
+    	*)
+    		vm_usage
+	    ;;
+esac
+exit 0

@@ -1,0 +1,14 @@
+Source: vbox
+Section: unknown
+Priority: optional
+Maintainer: samir.keriou <samir.keriou@gmail.com>
+Build-Depends: debmake, debhelper (>=9), bash,  debconf, virtualbox (>= 5.0), virtualbox-guest-additions-iso (>= 5.0), virtualbox-qt (>= 5.0), virtualbox-ext-pack (>= 5.0)
+Standards-Version: 3.9.7
+Homepage: <http://vbox.notyet.fr>
+#Vcs-Git: git://anonscm.debian.org/collab-maint/test.git
+#Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/test.git
+
+Package: vbox
+Architecture: amd64
+Description: <Manage vm on virtualbox in headless mode>
+ <control & manage vm created in virtualbox via vboxmanage cmd>

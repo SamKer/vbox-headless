@@ -1,0 +1,4 @@
+usr/bin/* usr/bin
+etc/* etc/
+usr/lib/* usr/lib
+var/log/* var/log

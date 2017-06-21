@@ -1,0 +1,38 @@
+  # Defaults for vbox initscript
+# sourced by /etc/init.d/vbox
+# installed at /etc/default/vbox by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# Additional options that are passed to the Daemon.
+DAEMON_OPTS=""
+
+. /lib/lsb/init-functions
+DESC="vbox"
+DAEMON=/usr/bin/vbox
+
+
+start() {
+	$DAEMON start --enable
+}
+stop() {
+	$DAEMON stop
+}
+
+status () {
+	$DAEMON status
+}
+
+case $1 in
+	start|stop|status)
+		$1
+	;;
+	restart|force-reload|reload)
+		stop
+		echo "waiting before start"
+		sleep 60
+		start
+	;;
+esac

@@ -1,0 +1,9 @@
+/var/log/vbox.log {
+         rotate 12
+         weekly
+         compress
+         missingok
+         postrotate
+             start-stop-daemon -K -p /var/run/vbox.pid -s HUP -x /usr/bin/vbox -q
+         endscript
+     }

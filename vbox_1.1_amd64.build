@@ -1,0 +1,57 @@
+ dpkg-buildpackage -rfakeroot -D -us -uc
+dpkg-buildpackage: paquet source vbox
+dpkg-buildpackage: version source 1.1
+dpkg-buildpackage: distribution source xenial
+dpkg-buildpackage: source changé par Samir Keriou <samir.keriou@gmail.com>
+ dpkg-source --before-build vbox-1.1
+dpkg-buildpackage: architecture hôte amd64
+ fakeroot debian/rules clean
+dh clean 
+   dh_testdir
+   dh_auto_clean
+   dh_clean
+ dpkg-source -b vbox-1.1
+dpkg-source: info: utilisation du format source « 3.0 (native) »
+dpkg-source: info: construction de vbox dans vbox_1.1.tar.xz
+dpkg-source: info: construction de vbox dans vbox_1.1.dsc
+ debian/rules build
+dh build 
+   dh_testdir
+   dh_update_autotools_config
+   dh_auto_configure
+   dh_auto_build
+   dh_auto_test
+ fakeroot debian/rules binary
+dh binary 
+   dh_testroot
+   dh_prep
+   dh_auto_install
+   dh_install
+   dh_installdocs
+   dh_installchangelogs
+   dh_installman
+   dh_installcron
+   dh_installinit
+   dh_perl
+   dh_link
+   dh_strip_nondeterminism
+   dh_compress
+   dh_fixperms
+   dh_strip
+   dh_makeshlibs
+   dh_shlibdeps
+   dh_installdeb
+   dh_gencontrol
+   dh_md5sums
+   dh_builddeb
+dpkg-deb : construction du paquet « vbox » dans « ../vbox_1.1_amd64.deb ».
+ dpkg-genchanges  >../vbox_1.1_amd64.changes
+dpkg-genchanges: inclusion du code source original dans l'envoi (« upload »)
+ dpkg-source --after-build vbox-1.1
+dpkg-buildpackage: envoi complet ; paquet Debian natif (inclusion du code source complet)
+Now running lintian...
+W: vbox: file-in-unusual-dir var/log/vbox.log
+E: vbox: init.d-script-depends-on-unknown-virtual-facility etc/init.d/vbox $vboxdrv
+E: vbox: init.d-script-depends-on-unknown-virtual-facility etc/init.d/vbox $vboxdrv
+W: vbox: init.d-script-does-not-source-init-functions etc/init.d/vbox
+Finished running lintian.

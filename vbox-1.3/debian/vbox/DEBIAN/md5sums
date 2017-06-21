@@ -1,0 +1,8 @@
+d4949ffc5c60fac0d2d3eddbb6fcaff9  lib/systemd/system/vbox.service
+25cfe172ee6315a57436bd5ae827d3f6  usr/bin/vbox
+fa4cb659abcea4655037f5c909a7c9e8  usr/lib/vbox/scripts/newhostname.sh
+a5e8a3029067e9e36b207a47b4aa7715  usr/lib/vbox/scripts/newuser.sh
+02ae2b39666ea85269ac6bfcc385fd58  usr/share/doc/vbox/changelog.gz
+93aa63a3f074ca4896da1ff451feef4b  usr/share/doc/vbox/copyright
+9368cc3df3b814c2569c2379b9bd1c33  usr/share/man/man1/vbox.1.gz
+3c2efe0d450dfa51114590424d0591fd  var/log/vbox.log

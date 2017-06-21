@@ -1,0 +1,10 @@
+[Unit]
+Description=vbox contains tools to manage and control vm in virtualbox
+After=local_fs.target remote_fs.target
+[Service]
+ExecStart=/usr/bin/vbox start
+ExecStop=/usr/bin/vbox stop
+ExecReload=/usr/bin/vbox reload
+StandardError=journal
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+Package: vbox
+Version: 1.1
+Architecture: amd64
+Maintainer: Samir Keriou <samir.keriou@gmail.com>
+Installed-Size: 57
+Section: admin
+Priority: optional
+Homepage: http://vbox.notyet.fr
+Description: <Manage vm on virtualbox in headless mode>
+ <control & manage vm created in virtualbox via vboxmanage cmd>
