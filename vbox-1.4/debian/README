@@ -4,3 +4,9 @@ The Debian Package vbox
 Comments regarding the Package
 
  -- Samir Keriou <samir.keriou@gmail.com>  Thu, 10 Nov 2016 15:32:01 +0100
+
+#TODO
+need realpath & help2man
+build-essential devscript lintian
+debhelper
+dh-systemd

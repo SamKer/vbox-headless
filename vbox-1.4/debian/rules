@@ -17,10 +17,15 @@
 %:
 	dh $@ --with=systemd
 
+
+
 #real tab indent!!!
 override_dh_installinit:
 	dh_installinit --name=vbox
 	dh_systemd_enable vbox.service
+
+override_dh_install:
+	@echo "skip dh_install"
 
 # dh_make generated override targets
 # This is example for Cmake (See https://bugs.debian.org/641051 )

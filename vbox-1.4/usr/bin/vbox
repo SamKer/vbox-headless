@@ -28,7 +28,11 @@ vm_config() {
 #refresh list for available or deleted vm
 #private method, called by vm_config
 vm_refresh() {
-	local vma=`ls $VMAVAILABLES`
+    local vma=""
+    if [ -f $VMAVAILABLES ]
+    then
+    	vma=`ls $VMAVAILABLES`
+    fi
 	local vmv=`vm_getlist`
 	declare -A list=()
 	local i=0

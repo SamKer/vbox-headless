@@ -28,7 +28,9 @@ _build() {
 #    local dir=$(getParam dir)
     local path=$(checkDir $version)
 	echo "build package..."
+
 	#_privileges $1 add
+
 	#purge old build
 	rm -Rf "$path/debian/vbox"
 	cd $path

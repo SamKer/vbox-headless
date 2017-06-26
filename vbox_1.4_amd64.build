@@ -18,7 +18,6 @@ dpkg-source: info: construction de vbox dans vbox_1.4.dsc
  debian/rules build
 dh build --with=systemd
    dh_testdir
-   dh_update_autotools_config
    dh_auto_configure
    dh_auto_build
    dh_auto_test
@@ -27,34 +26,14 @@ dh binary --with=systemd
    dh_testroot
    dh_prep
    dh_auto_install
-   dh_install
+   debian/rules override_dh_install
+make[1]: entrant dans le répertoire « /home/samir.keriou/www/vbox-headless/vbox-1.4 »
+skip dh_install
+make[1]: quittant le répertoire « /home/samir.keriou/www/vbox-headless/vbox-1.4 »
    dh_installdocs
    dh_installchangelogs
    dh_installman
-   dh_installcron
-   dh_systemd_enable
-   debian/rules override_dh_installinit
-make[1] : on entre dans le répertoire « /home/sam/Programmes/vbox/vbox-1.4 »
-dh_installinit --name=vbox
-dh_systemd_enable vbox.service
-make[1] : on quitte le répertoire « /home/sam/Programmes/vbox/vbox-1.4 »
-   dh_systemd_start
-   dh_perl
-   dh_link
-   dh_strip_nondeterminism
-   dh_compress
-   dh_fixperms
-   dh_strip
-   dh_makeshlibs
-   dh_shlibdeps
-   dh_installdeb
-   dh_gencontrol
-   dh_md5sums
-   dh_builddeb
-dpkg-deb : construction du paquet « vbox » dans « ../vbox_1.4_amd64.deb ».
- dpkg-genchanges  >../vbox_1.4_amd64.changes
-dpkg-genchanges: inclusion du code source original dans l'envoi (« upload »)
- dpkg-source --after-build vbox-1.4
-dpkg-buildpackage: envoi complet ; paquet Debian natif (inclusion du code source complet)
-Now running lintian...
-Finished running lintian.
+/home/samir.keriou/www/vbox-headless/vbox-1.4/debian/vbox.manpages: 1: /home/samir.keriou/www/vbox-headless/vbox-1.4/debian/vbox.manpages: debian/vbox.1: Permission denied
+dh_installman: problem reading debian/vbox.manpages: 
+make: *** [binary] Erreur 126
+dpkg-buildpackage: erreur: fakeroot debian/rules binary a produit une erreur de sortie de type 2

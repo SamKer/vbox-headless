@@ -3,24 +3,14 @@
 # @author samir.keriou
 
 dircurrent=`dirname $0`
+#dirname
+VBOX_DIR="$dircurrent"
+
 
 #get config vbox
 vm_config() {
-	VMCONF=/etc/vbox.ini
-	if [ -f $VMCONF ]
-	then
-		. $VMCONF
-	else
-		#perhaps in debian package for dev
-		VMCONF=`realpath $dircurrent/../../etc/vbox.ini`
-		if [ -f $VMCONF ]
-		then
-			. $VMCONF
-		else
-			echo "$VMCONF not exists"
-			exit 0
-		fi
-	fi
+	VMCONF="$dircurrent/vbox.ini"
+	source $VMCONF
 	vm_refresh
 	#vm_sshconfig
 }
@@ -28,7 +18,11 @@ vm_config() {
 #refresh list for available or deleted vm
 #private method, called by vm_config
 vm_refresh() {
-	local vma=`ls $VMAVAILABLES`
+    local vma=""
+    if [ -f $VMAVAILABLES ]
+    then
+    	vma=`ls $VMAVAILABLES`
+    fi
 	local vmv=`vm_getlist`
 	declare -A list=()
 	local i=0
@@ -47,7 +41,7 @@ vm_refresh() {
 		#echo "test $isinarray"
 		if [ "$isinarray" == "0" ]
 			then
-				sudo rm "$VMAVAILABLES/$VM2"
+				rm "$VMAVAILABLES/$VM2"
 		fi
 	done 	
 }
@@ -80,7 +74,7 @@ vm_help() {
 	echo "	--disable, disvm disabling vm at startup"
 	echo "	status	list all vm's current status"
 	echo "	restart|reload restart all or a specific vm"
-	echo "	setowner	define new vm owner"
+#	echo "	setowner	define new vm owner"
 	echo "	config	get|set params, set or get config param"
 	echo "	log	log message"
 	echo "	clone	clone vm"
@@ -112,7 +106,7 @@ vm_version() {
 #status des vms
 vm_status () {
     echo "-------------------VMS STATUS---------------:"
-    for VM in `sudo -H -u $VMUSER vboxmanage list vms | grep -o '"\(.*\)"'  | cut -d'"' -f2`; do
+    for VM in `vboxmanage list vms | grep -o '"\(.*\)"'  | cut -d'"' -f2`; do
     	local isr=`vm_isrunning $VM`
     	local show="1"
     	if [[ $1 == "--running" ]] && [[ $isr == "0" ]]
@@ -156,7 +150,7 @@ vm_setowner() {
 vm_setconfig() {
 	case $1 in 
 		VMUSER|VMADMIN|VMADMINPASSWORD)
-			sudo sed -i -e "s/\($1=\)\(.*\)/\1$2/"  $VMCONF
+			sed -i -e "s/\($1=\)\(.*\)/\1$2/"  $VMCONF
 			echo "config $1 modified"
 			vm_log "config $1 modifed"
 		;;
@@ -183,7 +177,7 @@ vm_getconfig() {
 
 #get ip from vm
 vm_getip () {
-    GETIP=`sudo -H -b -u $VMUSER vboxmanage guestproperty get $1 "/VirtualBox/GuestInfo/Net/0/V4/IP" | sed -e "s/Value: //g"`
+    GETIP=`vboxmanage guestproperty get $1 "/VirtualBox/GuestInfo/Net/0/V4/IP" | sed -e "s/Value: //g"`
     if [ "$GETIP" == "No value set!" ]
        then
           if [ -f "$VMAVAILABLES/$1" ]
@@ -199,7 +193,7 @@ vm_getip () {
 
 #is vm running
 vm_isrunning() {
-	VMSTATUS=`sudo -H -u $VMUSER vboxmanage list runningvms | grep \"$1\" | wc -l`
+	VMSTATUS=`vboxmanage list runningvms | grep \"$1\" | wc -l`
         if [ $VMSTATUS == "1" ]
             then
             	echo 1
@@ -230,7 +224,7 @@ vm_isenabled() {
 
 #list vm
 vm_getlist() {
-	local LIST=`sudo -H -u $VMUSER vboxmanage list vms | grep -o '"\(.*\)"'  | cut -d'"' -f2`
+	local LIST=`vboxmanage list vms | grep -o '"\(.*\)"'  | cut -d'"' -f2`
 	echo "$LIST"
 }
 
@@ -246,12 +240,12 @@ vm_add () {
                 	local oldip=`cat $VMAVAILABLES/$1`
                 	if [ "$oldip" != "$2" ]
                 	then
-                		sudo sh -c "echo $2 > $VMAVAILABLES/$1"
+                		sh -c "echo $2 > $VMAVAILABLES/$1"
             			echo "vm $1 modified, IP=$2"
             		fi
                 else
-            		sudo touch $VMAVAILABLES/$1
-            		sudo sh -c "echo $2 > $VMAVAILABLES/$1"
+            		touch $VMAVAILABLES/$1
+            		sh -c "echo $2 > $VMAVAILABLES/$1"
             		echo "vm $1 added, IP=$2"
         	fi
         else
@@ -263,13 +257,13 @@ vm_add () {
 vm_start () {
 	case $1 in 
 		--enable)
-			for VM in `sudo ls $VMENABLES`; do
+			for VM in `ls $VMENABLES`; do
 	            vm_startavm $VM
 	            sleep 1
 	        done
 		;;
 		--all)
-			for VM in `sudo ls $VMAVAILABLES`; do
+			for VM in `ls $VMAVAILABLES`; do
 	            vm_startavm $VM
 	            sleep 1
 	        done
@@ -295,7 +289,7 @@ vm_startavm () {
             vm_log "failed to start $1, VM already started" "WARNING"
     	else
         	echo "###________________________________starting VM $1 :"
-            sudo -H -u $VMUSER vboxmanage startvm $1 --type headless >> /tmp/test.log || {
+            vboxmanage startvm $1 --type headless >> /tmp/test.log || {
             echo "failed to start $1"
             vm_log "$1 failed to start" "ERROR"
             }
@@ -309,7 +303,7 @@ vm_stop () {
          then
             vm_stopavm $1
          else
-            for VM in `sudo -H -u $VMUSER vboxmanage list runningvms | grep -o '"\(.*\)"'  | cut -d'"' -f2`; do
+            for VM in `vboxmanage list runningvms | grep -o '"\(.*\)"'  | cut -d'"' -f2`; do
             	vm_stopavm $VM
             done
      fi
@@ -321,7 +315,7 @@ vm_stopavm () {
         if [ $VMSTATUS = "1" ]
             then
             	echo "###_________________________________stoping VM $1:"
-                sudo -H -u $VMUSER vboxmanage controlvm $1 poweroff
+                vboxmanage controlvm $1 poweroff
                 echo "....VM $1 is off."
                 vm_log "$1 is off"
         else
@@ -351,7 +345,7 @@ vm_clone () {
 		exit 0
 	fi
 	echo "...cloning"
-	sudo -H -u $VMUSER vboxmanage clonevm $VM --name $NEWVM --register || vm_log "clone $VM failed" "ERROR"
+	vboxmanage clonevm $VM --name $NEWVM --register || vm_log "clone $VM failed" "ERROR"
 	vm_log "clone $VM succeed"	
 	echo "starting vm $NEWVM"
 	vm_startavm $NEWVM
@@ -438,10 +432,10 @@ vm_scp() {
 		exit 0
 	fi
 	#copy to tmp file cause privilge
-	sudo cp $2 /tmp/vboxtmpfile
-	sudo chmod 777 	/tmp/vboxtmpfile
-	sudo -H -u $VMUSER vboxmanage guestcontrol $1 --username "$VMADMIN" --password "$VMADMINPASSWORD" copyto "$2" --target-directory "$3"
-	sudo rm /tmp/vboxtmpfile
+	cp $2 /tmp/vboxtmpfile
+	chmod 777 	/tmp/vboxtmpfile
+	vboxmanage guestcontrol $1 --username "$VMADMIN" --password "$VMADMINPASSWORD" copyto "$2" --target-directory "$3"
+	rm /tmp/vboxtmpfile
 }
 
 #log message
@@ -454,7 +448,7 @@ vm_log () {
 				type="$2"
 		fi
 		local msg="[$d][$type]---$1"
-		sudo sh -c "echo '$msg' >> $VMLOG"
+		sh -c "echo '$msg' >> $VMLOG"
 }
 
 #copy  and execute script in vm
@@ -477,11 +471,11 @@ vm_exec () {
 				arg2=""
 			fi
 			#put script in vm
-			sudo -H -u $VMUSER vboxmanage guestcontrol $1 --username "$VMADMIN" --password "$VMADMINPASSWORD" copyto "$2" --target-directory "/tmp/"
+			vboxmanage guestcontrol $1 --username "$VMADMIN" --password "$VMADMINPASSWORD" copyto "$2" --target-directory "/tmp/"
 			#chmod +x file
-			sudo -H -u $VMUSER vboxmanage guestcontrol $1 --username "$VMADMIN" --password "$VMADMINPASSWORD" run --exe /bin/chmod --wait-stdout --wait-stderr --verbose -- chmod/arg0 755 /tmp/$filename
+			vboxmanage guestcontrol $1 --username "$VMADMIN" --password "$VMADMINPASSWORD" run --exe /bin/chmod --wait-stdout --wait-stderr --verbose -- chmod/arg0 755 /tmp/$filename
 			#exec script
-			sudo -H -u $VMUSER vboxmanage guestcontrol $1 --username "$VMADMIN" --password "$VMADMINPASSWORD" run --exe /bin/bash --wait-stdout --wait-stderr --verbose -- bash/arg0 /tmp/$filename "$arg1" "$arg2"
+			vboxmanage guestcontrol $1 --username "$VMADMIN" --password "$VMADMINPASSWORD" run --exe /bin/bash --wait-stdout --wait-stderr --verbose -- bash/arg0 /tmp/$filename "$arg1" "$arg2"
 		else
 			echo "$1 is not running, try first vbox start $1"
 			vm_log "exec failed, vm $1 is not running" "ERROR"
@@ -498,7 +492,7 @@ vm_enable () {
     local isa=`vm_isavailable $1`
     if [ $isa == "1" ]
     then
-    	sudo ln -s $VMAVAILABLES/$1 $VMENABLES/$1
+    	ln -s $VMAVAILABLES/$1 $VMENABLES/$1
         echo "vm $1 enabled"
         vm_log "enabling vm $1 at startup"
     else
@@ -517,7 +511,7 @@ vm_disable () {
     local ise=`vm_isenabled $1`
     if [ $ise == "1" ]
     then
-    	sudo rm $VMENABLES/$1
+    	rm $VMENABLES/$1
         echo "vm $1 disabled"
         vm_log "disabling vm $1 at startup"
     else
@@ -572,8 +566,8 @@ vm_addguestaddition() {
 			echo " and retry"
 			exit 0
 		fi
-		sudo -H -u $VMUSER vboxmanage modifyvm "$1" --vrde on
-    	sudo -H -u $VMUSER vboxmanage modifyvm "$1" --vrdeport 5000
+		vboxmanage modifyvm "$1" --vrde on
+    	vboxmanage modifyvm "$1" --vrdeport 5000
 		vm_start $VM
 		echo "waiting service on..."
 		sleep 60
@@ -627,9 +621,14 @@ case "$1" in
 		status)
 			vm_status $2
 		;;
-		setowner)
-			vm_setowner $2
-		;;
+#		setowner)
+#		    if [ ! $2 ]
+#		    then
+#		        vm_setowner $USER
+#			else
+#			    vm_setowner $2
+#			fi
+#		;;
 		config)
 			if [ "$2" == "get" ]
 			then
